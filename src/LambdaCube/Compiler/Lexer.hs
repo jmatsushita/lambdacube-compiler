@@ -43,7 +43,7 @@ toSPos :: SourcePos -> SPos
 toSPos p = SPos (fromIntegral $ unPos $ sourceLine p) (fromIntegral $ unPos $ sourceColumn p)
 
 getSPos :: Parse r w SPos
-getSPos = toSPos <$> getPosition
+getSPos = toSPos <$> getSourcePos
 
 -------------------------------------------------------------------------------- literals
 
@@ -121,10 +121,10 @@ parseState fi di = (ParseEnv fi di ExpNS (SPos 0 0), either (error "impossible")
 --type Parse r w = ReaderT (ParseEnv r) (WriterT [w] (StateT SPos (Parsec String)))
 type Parse r w = RWST (ParseEnv r) [w] SPos (Parsec (ErrorFancy Void) String)
 
-newtype ParseError = ParseErr (P.ParseError (Token String) (ErrorFancy Void))
+newtype ParseError = ParseErr (ParseErrorBundle [Char] (ErrorFancy Void))
 
 instance Show ParseError where
-    show (ParseErr e) = parseErrorPretty e
+    show (ParseErr e) = show e
 
 runParse :: Parse r w a -> ParseState r -> Either ParseError (a, [w])
 runParse p (env, st) = left ParseErr . snd . flip runParser' st $ evalRWST p env (error "spos")
